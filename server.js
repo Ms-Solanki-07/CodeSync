@@ -1,18 +1,16 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http');
-const { Server } = require('socket.io');
+const http = require("http");
+const { Server } = require("socket.io");
 
 const server = http.createServer(app);
 const io = new Server(server);
 
-
-io.on('connection', (socket) => {
-  console.log('A user connected at', socket.id);
+io.on("connection", (socket) => {
+    console.log("A user connected at", socket.id);
 });
-
 
 const PORT = process.env.PORT || 5500;
 server.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+    console.log(`Server is listening on port ${PORT}`);
 });

@@ -1,70 +1,127 @@
-# Getting Started with Create React App
+# CodeSync
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Real-time collaborative code editing for teams, students, and interviewers built with React and Socket.IO.
 
-## Available Scripts
+## 📌 About the Project
 
-In the project directory, you can run:
+CodeSync is a browser-based collaborative coding platform that lets multiple users join the same room and edit code together in real time. The project solves the need for instant shared coding sessions without requiring a local IDE setup or complex infrastructure. It is useful for pair programming, remote collaboration, interview coding rounds, and quick teamwork on small code snippets.
 
-### `npm start`
+The application currently uses in-memory room and client tracking on the server. There is no database or user authentication layer implemented in the repository.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## ✨ Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Create a new room with a generated unique room ID
+- Join an existing room using a shared invite code
+- Real-time code synchronization across connected users
+- Collaborative editing with CodeMirror
+- Live participant list showing connected users
+- Copy room ID to clipboard from the editor screen
+- Leave room flow with toast notifications
+- Username-based presence tracking
+- Browser-based interface with React Router navigation
 
-### `npm test`
+## 🛠️ Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Frontend
+- React
+- React Router
+- CodeMirror
 
-### `npm run build`
+### Backend
+- Node.js
+- Express
+- Socket.IO
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🏗️ Project Architecture
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+CodeSync follows a lightweight client-server architecture:
 
-### `npm run eject`
+- The frontend is a React app that renders the home screen and editor workspace.
+- Users create or join rooms through the UI.
+- The backend is an Express server with Socket.IO.
+- When a user joins a room, the server tracks the socket and username.
+- Code edits are broadcast to all other connected clients in the same room.
+- A sync event also sends the latest code to a newly joined participant.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```mermaid
+flowchart LR
+    A[React Frontend] -->|join / code-change / sync-code| B[Express + Socket.IO Server]
+    B -->|joined / disconnected / code-change| A
+    A --> C[CodeMirror Editor]
+    A --> D[Connected Users List]
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 📂 Project Structure
+```text
+CodeSync/
+├── .env.sample
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── server.js
+├── public/
+│   └── code-sync.png
+├── README.md
+└── src/
+    ├── Action.js
+    ├── App.css
+    ├── App.js
+    ├── App.test.js
+    ├── index.css
+    ├── index.js
+    ├── logo.svg
+    ├── reportWebVitals.js
+    ├── setupTests.js
+    ├── socket.js
+    ├── components/
+    │   ├── Client.js
+    │   └── Editor.js
+    └── pages/
+        ├── EditorPage.js
+        └── Home.js
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## ⚙️ Installation & Setup
+```bash
+git clone https://github.com/Ms-Solanki-07/CodeSync
+cd CodeSync
+npm install
+```
+Create a .env file in the project root by copying .env.sample, then configure the required values.
 
-## Learn More
+## ▶️ Running the Project
+Start the backend in one terminal:
+```bash
+npm run server:dev
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Start the frontend in a second terminal:
+```bash
+npm run start
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🧠 Technical Highlights
 
-### Code Splitting
+- Real-time synchronization using Socket.IO event broadcasting
+- Room-based collaboration using unique UUID-generated room IDs
+- CodeMirror-powered editor with bracket and tag auto-completion
+- In-memory user tracking via a socket-to-username map
+- Reactive connected-client list with user avatars
+- Client-side routing for room-based workflows
+- Clipboard support for copying room join codes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Analyzing the Bundle Size
+## 📈 Future Improvements
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+The following improvements are realistic next steps for the project, but are not currently implemented:
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Persistent room state and saved code history
+- User authentication and profile management
+- Support for multiple files or project tabs
+- Language selection beyond JavaScript
+- Cursor position and text selection sharing
+- Chat or comment system inside collaboration rooms
+- Deployment configuration for production environments
+- Room expiration or cleanup logic for inactive sessions

@@ -5,7 +5,9 @@ const { Server } = require("socket.io");
 const ACTIONS = require("./src/Action");
 
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    maxHttpBufferSize: 5e6, // 5 MB, enough for ~60s voice clips
+});
 
 const userSocketMap = {};
 
@@ -35,12 +37,40 @@ io.on("connection", (socket) => {
         })
     });
 
-    socket.on(ACTIONS.CODE_CHANGE, ({roomId, code}) => {
-        socket.in(roomId).emit(ACTIONS.CODE_CHANGE, {code});
+    socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
+        socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
     });
-    
-    socket.on(ACTIONS.SYNC_CODE, ({code, socketId}) => {
-        io.to(socketId).emit(ACTIONS.CODE_CHANGE, {code});
+
+    socket.on(ACTIONS.SYNC_CODE, ({ code, socketId }) => {
+        io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+    });
+
+    socket.on(ACTIONS.CHAT_MESSAGE, ({ roomId, type, text, audio, mimeType }) => {
+        // Only accept messages from sockets that are actually in the room
+        if (!socket.rooms.has(roomId)) return;
+
+        const message = {
+            id: `${socket.id}-${Date.now()}`,
+            socketId: socket.id,
+            username: userSocketMap[socket.id],
+            type,
+            timestamp: Date.now(),
+        };
+
+        if (type === "text") {
+            const clean = String(text || "").trim().slice(0, 2000);
+            if (!clean) return;
+            message.text = clean;
+        } else if (type === "voice") {
+            if (!audio || !String(mimeType).startsWith("audio/")) return;
+            message.audio = audio;
+            message.mimeType = mimeType;
+        } else {
+            return;
+        }
+
+        // io.in (not socket.in) so the sender receives it too
+        io.in(roomId).emit(ACTIONS.CHAT_MESSAGE, message);
     });
 
     socket.on('disconnecting', () => {

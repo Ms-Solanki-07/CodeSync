@@ -5,6 +5,7 @@ import { initSocket } from "../socket";
 import ACTIONS from "../Action";
 import { useLocation, useNavigate, Navigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import Chat from "../components/Chat";
 
 const EditorPage = () => {
 
@@ -15,6 +16,7 @@ const EditorPage = () => {
     const { roomId } = useParams();
 
     const [clients, setClients] = useState([]);
+    const [messages, setMessages] = useState([]);
 
     useEffect(() => {
         const init = async () => {
@@ -53,6 +55,11 @@ const EditorPage = () => {
                     return prev.filter((client) => client.socketId !== socketId);
                 })
             })
+
+            //Listening for chat messages
+            socketRef.current.on(ACTIONS.CHAT_MESSAGE, (message) => {
+                setMessages((prev) => [...prev, message]);
+            });
         }
         init();
 
@@ -60,6 +67,7 @@ const EditorPage = () => {
             socketRef.current.disconnect();
             socketRef.current.off(ACTIONS.JOINED);
             socketRef.current.off(ACTIONS.DISCONNECTED);
+            socketRef.current.off(ACTIONS.CHAT_MESSAGE);
         }
     }, []);
 
@@ -75,6 +83,20 @@ const EditorPage = () => {
             toast.error('Could not copy the Room Id');
             console.error("Error: " + error)
         }
+    }
+
+    function sendText(text) {
+        socketRef.current.emit(ACTIONS.CHAT_MESSAGE, { roomId, type: "text", text });
+    }
+
+    async function sendVoice(blob) {
+        const audio = await blob.arrayBuffer();
+        socketRef.current.emit(ACTIONS.CHAT_MESSAGE, {
+            roomId,
+            type: "voice",
+            audio,
+            mimeType: blob.type,
+        });
     }
 
     function leaveRoom() {
@@ -106,10 +128,18 @@ const EditorPage = () => {
                 <button className="btn leaveBtn" onClick={leaveRoom}>Leave</button>
             </div>
             <div className="editorWrap">
-                <Editor 
-                    socketRef={socketRef} 
-                    roomId={roomId} 
-                    onCodeChange={(code) => { codeRef.current = code }} 
+                <Editor
+                    socketRef={socketRef}
+                    roomId={roomId}
+                    onCodeChange={(code) => { codeRef.current = code }}
+                />
+            </div>
+            <div>
+                <Chat
+                    messages={messages}
+                    mySocketId={socketRef.current?.id}
+                    onSendText={sendText}
+                    onSendVoice={sendVoice}
                 />
             </div>
         </div>

@@ -92,7 +92,7 @@ footer a:hover {
 
 .mainWrap {
     display: grid;
-    grid-template-columns: 230px 1fr;
+    grid-template-columns: 230px 1fr 300px;
 }
 
 .aside {
@@ -144,4 +144,139 @@ footer a:hover {
     font-size: 20px;
     line-height: 1.6;
     padding-top: 20px;
+}
+
+
+/* ---------- Chat ---------- */
+.chatWrap {
+    background: #1c1e29;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    border-left: 1px solid #424242;
+}
+
+.chatTitle {
+    margin: 0;
+    padding: 16px;
+    border-bottom: 1px solid #424242;
+}
+
+.chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chatEmpty {
+    color: #888;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.chatMsg {
+    max-width: 85%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #282a36;
+}
+
+.chatMsg.mine {
+    align-self: flex-end;
+    background: #2b824c;
+}
+
+.chatMsg.theirs {
+    align-self: flex-start;
+}
+
+.chatMeta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    margin-bottom: 4px;
+    opacity: 0.8;
+}
+
+.chatUser {
+    font-weight: bold;
+}
+
+.chatText {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.chatAudio {
+    width: 100%;
+    height: 36px;
+}
+
+.chatInputRow,
+.chatRecording {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #424242;
+}
+
+.chatInput {
+    flex: 1;
+    resize: none;
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    background: #eee;
+    font-size: 14px;
+    font-family: inherit;
+    max-height: 100px;
+}
+
+.chatIconBtn {
+    border: none;
+    background: #282a36;
+    color: #fff;
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chatIconBtn:hover {
+    background: #3a3d4e;
+}
+
+.chatIconBtn.send {
+    background: #4aed88;
+    color: #000;
+}
+
+.chatIconBtn.send:hover {
+    background: #2b824c;
+}
+
+.chatRecording span:nth-child(2) {
+    flex: 1;
+}
+
+.recDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff4d4d;
+    animation: recPulse 1s infinite;
+}
+
+@keyframes recPulse {
+    50% { opacity: 0.3; }
 }

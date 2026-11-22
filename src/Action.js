@@ -6,6 +6,8 @@ const ACTIONS = {
     SYNC_CODE: 'sync-code',
     LEAVE: 'leave',
     CHAT_MESSAGE: 'chat-message',
+    RUN_CODE: 'run-code',
 };
 
 module.exports = ACTIONS;
+

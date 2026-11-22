@@ -91,6 +91,7 @@ footer a:hover {
 }
 
 .mainWrap {
+    height: 100vh;
     display: grid;
     grid-template-columns: 230px 1fr 300px;
 }
@@ -144,6 +145,7 @@ footer a:hover {
     font-size: 20px;
     line-height: 1.6;
     padding-top: 20px;
+    box-sizing: border-box;
 }
 
 
@@ -279,4 +281,195 @@ footer a:hover {
 
 @keyframes recPulse {
     50% { opacity: 0.3; }
+}
+
+/* ----- editor column layout ----- */
+.editorWrap {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-width: 0;
+}
+
+.editorArea {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.editorArea .CodeMirror {
+    height: 100%;
+}
+
+/* ----- top bar + CodeSync/Compiler switch ----- */
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 56px;
+    flex-shrink: 0;
+    background: #1c1e29;
+    border-bottom: 1px solid #424242;
+}
+
+.modeSwitch {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #282a36;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.modeThumb {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    background: #4aed88;
+    border-radius: 7px;
+    transition: transform 0.2s ease;
+}
+
+.modeSwitch[data-mode="compiler"] .modeThumb {
+    transform: translateX(100%);
+}
+
+.modeBtn {
+    position: relative;
+    z-index: 1;
+    min-width: 110px;
+    padding: 8px 18px;
+    border: none;
+    background: none;
+    color: #fff;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.modeBtn.active {
+    color: #1c1e29;
+}
+
+/* ----- compiler panel ----- */
+.compilerPanel {
+    flex-shrink: 0;
+    height: 0;
+    overflow: hidden;
+    background: #1c1e29;
+    color: #fff;
+    transition: height 0.25s ease;
+}
+
+.compilerPanel.open {
+    height: 300px;
+    border-top: 1px solid #424242;
+}
+
+.compilerInner {
+    height: 300px;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.compilerToolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.langSelect {
+    padding: 8px 10px;
+    border: none;
+    border-radius: 5px;
+    background: #eee;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.runBtn {
+    margin-left: auto;
+    padding: 8px 24px;
+    background: #4aed88;
+}
+
+.runBtn:hover:not(:disabled) {
+    background: #2b824c;
+}
+
+.runBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.compilerIO {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 12px;
+}
+
+.ioBox {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.ioLabel {
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #9aa0b5;
+}
+
+.stdinBox,
+.outputBox {
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+    background: #282a36;
+    color: #f8f8f2;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 14px;
+}
+
+.stdinBox {
+    resize: none;
+    outline: none;
+}
+
+.outputBox {
+    overflow: auto;
+}
+
+.outputBox pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.isError {
+    color: #ff6b6b;
+}
+
+.compilerMuted,
+.compilerMeta {
+    color: #9aa0b5;
+    font-size: 13px;
+}
+
+.compilerMeta {
+    margin-top: 8px;
 }

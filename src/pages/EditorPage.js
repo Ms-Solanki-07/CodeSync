@@ -1,120 +1,299 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
+
 import Client from "../components/Client";
 import Editor from "../components/Editor";
-import { initSocket } from "../socket";
-import ACTIONS from "../Action";
-import { useLocation, useNavigate, Navigate, useParams } from "react-router-dom";
-import toast from "react-hot-toast";
+import ModeSwitch from "../components/ModeSwitch";
+import Compiler from "../components/Compiler";
 import Chat from "../components/Chat";
 
-const EditorPage = () => {
+import { initSocket } from "../socket";
+import ACTIONS from "../Action";
+import { DEFAULT_LANGUAGE } from "../languages";
 
+import {
+    useLocation,
+    useNavigate,
+    Navigate,
+    useParams,
+} from "react-router-dom";
+
+import toast from "react-hot-toast";
+
+const EditorPage = () => {
     const socketRef = useRef(null);
-    const codeRef = useRef(null);
+    const codeRef = useRef("");
+
     const location = useLocation();
     const reactNavigator = useNavigate();
     const { roomId } = useParams();
 
+    const username = location.state?.username;
+
+    const [socket, setSocket] = useState(null);
     const [clients, setClients] = useState([]);
     const [messages, setMessages] = useState([]);
 
+    const [mode, setMode] = useState("codesync");
+    const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+
+
+    const handleCodeChange = useCallback((code) => {
+        codeRef.current = code;
+    }, []);
+
+    const getCode = useCallback(() => {
+        return codeRef.current || "";
+    }, []);
+
     useEffect(() => {
+        if (!username || !roomId) return;
+
+        let isMounted = true;
+        let currentSocket = null;
+
         const init = async () => {
-            socketRef.current = await initSocket();
-            socketRef.current.on('connect_error', (err) => handleErrors(err));
-            socketRef.current.on('connect_failed', (err) => handleErrors(err));
+            try {
+                const newSocket = await initSocket();
 
-            function handleErrors(e) {
-                console.log('Socket Error: ', e);
-                toast.error('Socket connection Failed, Try again later.');
-                reactNavigator('/')
-            }
-
-            socketRef.current.emit(ACTIONS.JOIN, {
-                roomId,
-                username: location.state?.username,
-            });
-
-            //Listening for JOINED event
-            socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
-                if (username !== location.state?.username) {
-                    toast.success(`${username} joined the room.`);
-                    console.log(`${username} joined.`);
+                if (!isMounted) {
+                    newSocket.disconnect();
+                    return;
                 }
-                setClients(clients);
-                socketRef.current.emit(ACTIONS.SYNC_CODE, {
-                    code: codeRef.current,
-                    socketId
+
+                currentSocket = newSocket;
+                socketRef.current = newSocket;
+                setSocket(newSocket);
+
+                // Socket Connection Errors
+                const handleErrors = (error) => {
+                    console.error("Socket Error:", error);
+
+                    toast.error(
+                        "Socket connection failed. Please try again."
+                    );
+
+                    reactNavigator("/");
+                };
+
+                // User Joined Room
+                const handleJoined = ({
+                    clients: joinedClients = [],
+                    username: joinedUsername,
+                    socketId,
+                }) => {
+                    setClients(joinedClients);
+
+                    if (socketId !== newSocket.id) {
+                        toast.success(
+                            `${joinedUsername} joined the room.`
+                        );
+
+                        // Synchronize editor code with the new user
+                        newSocket.emit(ACTIONS.SYNC_CODE, {
+                            code: getCode(),
+                            socketId,
+                        });
+                    }
+                };
+
+                // User Disconnected
+                const handleDisconnected = ({
+                    socketId,
+                    username: leftUsername,
+                }) => {
+                    setClients((previousClients) =>
+                        previousClients.filter(
+                            (client) => client.socketId !== socketId
+                        )
+                    );
+
+                    if (leftUsername) {
+                        toast.success(
+                            `${leftUsername} left the room.`
+                        );
+                    }
+                };
+
+                // Receive Chat Messages
+                const handleChatMessage = (message) => {
+                    setMessages((previousMessages) => [
+                        ...previousMessages,
+                        message,
+                    ]);
+                };
+
+                // Register Socket Listeners BEFORE joining
+                newSocket.on("connect_error", handleErrors);
+                newSocket.on("connect_failed", handleErrors);
+
+                newSocket.on(ACTIONS.JOINED, handleJoined);
+                newSocket.on(
+                    ACTIONS.DISCONNECTED,
+                    handleDisconnected
+                );
+
+                newSocket.on(
+                    ACTIONS.CHAT_MESSAGE,
+                    handleChatMessage
+                );
+
+                // Join Room
+                newSocket.emit(ACTIONS.JOIN, {
+                    roomId,
+                    username,
                 });
-            })
 
-            //Listening for disconnected
-            socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
-                toast.success(`${username} left the room.`);
-                setClients((prev) => {
-                    return prev.filter((client) => client.socketId !== socketId);
-                })
-            })
+            } catch (error) {
+                console.error("Socket initialization error:", error);
 
-            //Listening for chat messages
-            socketRef.current.on(ACTIONS.CHAT_MESSAGE, (message) => {
-                setMessages((prev) => [...prev, message]);
-            });
-        }
+                if (isMounted) {
+                    toast.error("Unable to connect to the server.");
+                    reactNavigator("/");
+                }
+            }
+        };
+
         init();
 
         return () => {
-            socketRef.current.disconnect();
-            socketRef.current.off(ACTIONS.JOINED);
-            socketRef.current.off(ACTIONS.DISCONNECTED);
-            socketRef.current.off(ACTIONS.CHAT_MESSAGE);
-        }
-    }, []);
+            isMounted = false;
 
-    if (!location.state) {
-        return <Navigate to="/" />
-    }
+            if (currentSocket) {
+                currentSocket.off("connect_error");
+                currentSocket.off("connect_failed");
 
-    async function copyRoomID() {
+                currentSocket.off(ACTIONS.JOINED);
+                currentSocket.off(ACTIONS.DISCONNECTED);
+                currentSocket.off(ACTIONS.CHAT_MESSAGE);
+
+                currentSocket.disconnect();
+            }
+
+            if (socketRef.current === currentSocket) {
+                socketRef.current = null;
+            }
+
+            setSocket(null);
+        };
+
+    }, [username, roomId, reactNavigator, getCode]);
+
+    const copyRoomID = async () => {
         try {
             await navigator.clipboard.writeText(roomId);
-            toast.success('Room Id has been copied to your clipboard')
+
+            toast.success(
+                "Room ID copied to clipboard!"
+            );
+
         } catch (error) {
-            toast.error('Could not copy the Room Id');
-            console.error("Error: " + error)
+            console.error("Copy Room ID Error:", error);
+
+            toast.error(
+                "Could not copy the Room ID."
+            );
         }
-    }
+    };
 
-    function sendText(text) {
-        socketRef.current.emit(ACTIONS.CHAT_MESSAGE, { roomId, type: "text", text });
-    }
+    const sendText = (text) => {
+        const currentSocket = socketRef.current;
 
-    async function sendVoice(blob) {
-        const audio = await blob.arrayBuffer();
-        socketRef.current.emit(ACTIONS.CHAT_MESSAGE, {
+        if (!currentSocket?.connected) {
+            toast.error("Socket is not connected.");
+            return;
+        }
+
+        if (!text || !text.trim()) {
+            return;
+        }
+
+        currentSocket.emit(ACTIONS.CHAT_MESSAGE, {
             roomId,
-            type: "voice",
-            audio,
-            mimeType: blob.type,
+            type: "text",
+            text: text.trim(),
         });
-    }
+    };
 
-    function leaveRoom() {
-        reactNavigator('/')
+
+    const sendVoice = async (blob) => {
+        const currentSocket = socketRef.current;
+
+        if (!currentSocket?.connected) {
+            toast.error("Socket is not connected.");
+            return;
+        }
+
+        if (!blob || blob.size === 0) {
+            toast.error("Voice message is empty.");
+            return;
+        }
+
+        try {
+            const audio = await blob.arrayBuffer();
+
+            // Check connection again after async operation
+            if (!currentSocket.connected) {
+                toast.error("Connection lost. Please try again.");
+                return;
+            }
+
+            currentSocket.emit(ACTIONS.CHAT_MESSAGE, {
+                roomId,
+                type: "voice",
+                audio,
+                mimeType: blob.type || "audio/webm",
+            });
+
+        } catch (error) {
+            console.error("Voice Message Error:", error);
+
+            toast.error(
+                "Failed to send voice message."
+            );
+        }
+    };
+
+    const leaveRoom = () => {
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current = null;
+        }
+
+        setSocket(null);
+        reactNavigator("/");
+    };
+
+    if (!username) {
+        return <Navigate to="/" replace />;
     }
 
     return (
         <div className="mainWrap">
+
+            {/* Sidebar */}
             <div className="aside">
+
                 <div className="asideInner">
+
+                    {/* Logo */}
                     <div className="logo">
                         <img
                             className="logoImage"
                             src="/code-sync.png"
-                            alt="logo"
+                            alt="CodeSync Logo"
                         />
                     </div>
-                    <h3>Connected</h3>
+
+                    {/* Connected Users */}
+                    <h3>
+                        Connected ({clients.length})
+                    </h3>
+
                     <div className="clientsList">
                         {clients.map((client) => (
                             <Client
@@ -123,25 +302,74 @@ const EditorPage = () => {
                             />
                         ))}
                     </div>
+
                 </div>
-                <button className="btn copyBtn" onClick={copyRoomID}>Copy ROOM ID</button>
-                <button className="btn leaveBtn" onClick={leaveRoom}>Leave</button>
+
+                {/* Copy Room ID */}
+                <button
+                    className="btn copyBtn"
+                    onClick={copyRoomID}
+                    type="button"
+                >
+                    Copy ROOM ID
+                </button>
+
+                {/* Leave Room */}
+                <button
+                    className="btn leaveBtn"
+                    onClick={leaveRoom}
+                    type="button"
+                >
+                    Leave
+                </button>
+
             </div>
+
+            {/* Editor Section */}
             <div className="editorWrap">
-                <Editor
-                    socketRef={socketRef}
-                    roomId={roomId}
-                    onCodeChange={(code) => { codeRef.current = code }}
-                />
+
+                {/* Mode Switch */}
+                <div className="topBar">
+                    <ModeSwitch
+                        mode={mode}
+                        onChange={setMode}
+                    />
+                </div>
+
+                {/* Editor and Compiler */}
+                {socket && (
+                    <>
+                        <Editor
+                            socket={socket}
+                            roomId={roomId}
+                            onCodeChange={handleCodeChange}
+                            language={language}
+                        />
+
+                        <Compiler
+                            open={mode === "compiler"}
+                            socket={socket}
+                            language={language}
+                            onLanguageChange={setLanguage}
+                            getCode={getCode}
+                        />
+                    </>
+                )}
+
             </div>
-            <div>
+
+            {/* Chat Section */}
+            <div className="chatWrap">
+
                 <Chat
                     messages={messages}
-                    mySocketId={socketRef.current?.id}
+                    mySocketId={socket?.id}
                     onSendText={sendText}
                     onSendVoice={sendVoice}
                 />
+
             </div>
+
         </div>
     );
 };

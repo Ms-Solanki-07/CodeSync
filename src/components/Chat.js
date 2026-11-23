@@ -171,7 +171,7 @@ const Chat = ({ messages, mySocketId, onSendText, onSendVoice }) => {
                         onKeyDown={handleKeyDown}
                     />
                     <button className="chatIconBtn" onClick={startRecording} title="Record voice message">
-                        🎤
+                        🎤︎︎
                     </button>
                     <button className="chatIconBtn send" onClick={sendText} title="Send">
                         ➤

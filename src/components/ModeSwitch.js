@@ -1,7 +1,7 @@
 import React from "react";
 
 const ModeSwitch = ({ mode, onChange }) => (
-    <div className="modeSwitch" role="tablist" data-mode={mode}>
+    <div className="modeSwitch modeSwitch--three" role="tablist" data-mode={mode}>
         <span className="modeThumb" />
         <button
             type="button"
@@ -20,6 +20,16 @@ const ModeSwitch = ({ mode, onChange }) => (
             onClick={() => onChange("compiler")}
         >
             Compiler
+        </button>
+
+        <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "whiteboard"}
+            className={mode === "whiteboard" ? "modeBtn active" : "modeBtn"}
+            onClick={() => onChange("whiteboard")}
+        >
+            ExceliDraw
         </button>
     </div>
 );

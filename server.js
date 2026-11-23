@@ -3,6 +3,7 @@ const app = express();
 const http = require("http");
 const { Server } = require("socket.io");
 const ACTIONS = require("./src/Action");
+const registerWhiteboardHandlers = require("./whiteboardServer");
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -165,6 +166,7 @@ function getAllConnectedClients(roomId) {
 
 io.on("connection", (socket) => {
     console.log("A user connected at", socket.id);
+    registerWhiteboardHandlers(io, socket, userSocketMap);
 
     socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
         userSocketMap[socket.id] = username;

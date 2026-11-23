@@ -1,0 +1,54 @@
+.wbStage {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #1c1e29;
+}
+
+.wbStage--hidden {
+    display: none;
+}
+
+.wbBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 14px;
+    flex-shrink: 0;
+    color: #fff;
+    border-bottom: 1px solid #424242;
+}
+
+.wbTitle {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.wbActions {
+    display: flex;
+    gap: 8px;
+}
+
+.wbBtn {
+    padding: 6px 14px;
+    font-size: 14px;
+    background: #4aed88;
+}
+
+.wbBtn:hover {
+    background: #2b824c;
+}
+
+.wbCanvas {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+.wbCanvasInner {
+    position: absolute;
+    inset: 0;
+}

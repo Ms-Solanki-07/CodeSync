@@ -3,6 +3,8 @@ import React, {
     useEffect,
     useRef,
     useState,
+    lazy,
+    Suspense
 } from "react";
 
 import Client from "../components/Client";
@@ -23,6 +25,8 @@ import {
 } from "react-router-dom";
 
 import toast from "react-hot-toast";
+
+const Whiteboard = lazy(() => import("../components/Whiteboard"));
 
 const EditorPage = () => {
     const socketRef = useRef(null);
@@ -49,6 +53,11 @@ const EditorPage = () => {
     const getCode = useCallback(() => {
         return codeRef.current || "";
     }, []);
+
+    const [whiteboardMounted, setWhiteboardMounted] = useState(false);
+    useEffect(() => {
+        if (mode === "whiteboard") setWhiteboardMounted(true);
+    }, [mode]);
 
     useEffect(() => {
         if (!username || !roomId) return;
@@ -336,23 +345,35 @@ const EditorPage = () => {
                     />
                 </div>
 
-                {/* Editor and Compiler */}
+                {/* Editor and Compiler and exceliDraw */}
                 {socket && (
                     <>
-                        <Editor
-                            socket={socket}
-                            roomId={roomId}
-                            onCodeChange={handleCodeChange}
-                            language={language}
-                        />
+                        <div className={mode === "whiteboard" ? "codeStage codeStage--hidden" : "codeStage"}>
+                            <Editor
+                                socket={socket}
+                                roomId={roomId}
+                                onCodeChange={handleCodeChange}
+                                language={language}
+                            />
+                            <Compiler
+                                open={mode === "compiler"}
+                                socket={socket}
+                                language={language}
+                                onLanguageChange={setLanguage}
+                                getCode={getCode}
+                            />
+                        </div>
 
-                        <Compiler
-                            open={mode === "compiler"}
-                            socket={socket}
-                            language={language}
-                            onLanguageChange={setLanguage}
-                            getCode={getCode}
-                        />
+                        {whiteboardMounted && (
+                            <Suspense fallback={<div className="chatEmpty">Loading whiteboard…</div>}>
+                                <Whiteboard
+                                    socket={socket}
+                                    roomId={roomId}
+                                    username={username}
+                                    active={mode === "whiteboard"}
+                                />
+                            </Suspense>
+                        )}
                     </>
                 )}
 

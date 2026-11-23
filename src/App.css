@@ -473,3 +473,15 @@ footer a:hover {
 .compilerMeta {
     margin-top: 8px;
 }
+
+
+/* ----- 3-way mode switch ----- */
+.modeSwitch--three { grid-template-columns: repeat(3, 1fr); }
+.modeSwitch--three .modeThumb { width: calc((100% - 8px) / 3); }
+.modeSwitch--three[data-mode="compiler"] .modeThumb { transform: translateX(100%); }
+.modeSwitch--three[data-mode="whiteboard"] .modeThumb { transform: translateX(200%); }
+.modeSwitch--three .modeBtn { min-width: 100px; }
+
+/* ----- wrapper that lets the editor+compiler be hidden without unmounting ----- */
+.codeStage { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.codeStage--hidden { display: none; }

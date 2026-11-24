@@ -141,6 +141,55 @@ footer a:hover {
     margin-top: 20px;
 }
 
+/* ----- sidebar: user info + logout ----- */
+.userRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.copyBtn{
+    background: #282a36;
+    color: #fff;
+}
+.copyBtn:hover {
+    background: #3a3d4e;
+}
+
+.userBtn {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #282a36;
+    color: #fff;
+    cursor: default;
+}
+
+.userBtn:hover {
+    background: #3a3d4e;
+}
+
+.userBtnName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* override the old full-width .leaveBtn rules, but only inside this row */
+.userRow .leaveBtn {
+    width: auto;
+    margin: 0;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+}
+
 .CodeMirror {
     min-height: calc(100vh - 20px);
     font-size: 20px;

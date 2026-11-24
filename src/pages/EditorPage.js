@@ -6,6 +6,7 @@ import React, {
     lazy,
     Suspense
 } from "react";
+import Avatar from "react-avatar";
 
 import Client from "../components/Client";
 import Editor from "../components/Editor";
@@ -320,17 +321,43 @@ const EditorPage = () => {
                     onClick={copyRoomID}
                     type="button"
                 >
-                    Copy ROOM ID
+                    Copy Room ID 
                 </button>
 
-                {/* Leave Room */}
-                <button
-                    className="btn leaveBtn"
-                    onClick={leaveRoom}
-                    type="button"
-                >
-                    Leave
-                </button>
+                {/* Logged-in user + Logout */}
+                <div className="userRow">
+                    <button
+                        className="btn userBtn"
+                        type="button"
+                        title={`Logged in as ${username}`}
+                    >
+                        <Avatar name={username} size={24} round="8px" />
+                        <span className="userBtnName">{username}</span>
+                    </button>
+
+                    <button
+                        className="btn leaveBtn"
+                        onClick={leaveRoom}
+                        type="button"
+                        title="Leave room"
+                        aria-label="Leave room"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </button>
+                </div>
 
             </div>
 

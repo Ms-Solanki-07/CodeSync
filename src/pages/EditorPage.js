@@ -13,6 +13,8 @@ import Editor from "../components/Editor";
 import ModeSwitch from "../components/ModeSwitch";
 import Compiler from "../components/Compiler";
 import Chat from "../components/Chat";
+import ResizableSplit from "../components/ResizableSplit";
+import { ChatIcon, CopyIcon, LeaveIcon } from "../components/Icons";
 
 import { initSocket } from "../socket";
 import ACTIONS from "../Action";
@@ -28,6 +30,22 @@ import {
 import toast from "react-hot-toast";
 
 const Whiteboard = lazy(() => import("../components/Whiteboard"));
+
+const LAYOUT_KEY = "codesync:layout";
+
+const useMediaQuery = (query) => {
+    const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+    useEffect(() => {
+        const mq = window.matchMedia(query);
+        const onChange = (e) => setMatches(e.matches);
+        setMatches(mq.matches);
+        mq.addEventListener("change", onChange);
+        return () => mq.removeEventListener("change", onChange);
+    }, [query]);
+    return matches;
+};
+
+const badgeText = (n) => (n > 99 ? "99+" : String(n));
 
 const EditorPage = () => {
     const socketRef = useRef(null);
@@ -46,6 +64,43 @@ const EditorPage = () => {
     const [mode, setMode] = useState("codesync");
     const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
 
+    // ----- layout (side-by-side vs stacked) -----
+    const narrow = useMediaQuery("(max-width: 800px)");
+    const [layout, setLayout] = useState(() => {
+        try {
+            return localStorage.getItem(LAYOUT_KEY) === "stacked" ? "stacked" : "side";
+        } catch {
+            return "side";
+        }
+    });
+    const changeLayout = useCallback((next) => {
+        setLayout(next);
+        try {
+            localStorage.setItem(LAYOUT_KEY, next);
+        } catch {
+            /* ignore */
+        }
+    }, []);
+    const effectiveLayout = narrow ? "stacked" : layout;
+
+    // ----- collapsible chat + unread badge -----
+    const [chatOpen, setChatOpen] = useState(() => window.innerWidth > 1000);
+    const [unread, setUnread] = useState(0);
+    const chatOpenRef = useRef(chatOpen);
+
+    useEffect(() => {
+        chatOpenRef.current = chatOpen;
+        if (chatOpen) setUnread(0);
+    }, [chatOpen]);
+
+    useEffect(() => {
+        document.title = unread > 0 ? `(${badgeText(unread)}) Code Sync` : "Code Sync";
+        return () => {
+            document.title = "Code Sync";
+        };
+    }, [unread]);
+
+    const toggleChat = useCallback(() => setChatOpen((open) => !open), []);
 
     const handleCodeChange = useCallback((code) => {
         codeRef.current = code;
@@ -135,6 +190,17 @@ const EditorPage = () => {
                         ...previousMessages,
                         message,
                     ]);
+
+                    // Chat hidden: count it as unread and show a short preview
+                    if (!chatOpenRef.current && message.socketId !== newSocket.id) {
+                        setUnread((n) => n + 1);
+                        if (message.type === "text") {
+                            const preview = String(message.text || "").slice(0, 60);
+                            toast(`${message.username}: ${preview}`, { icon: "💬" });
+                        } else {
+                            toast(`${message.username} sent a voice message`, { icon: "🎙️" });
+                        }
+                    }
                 };
 
                 // Register Socket Listeners BEFORE joining
@@ -283,14 +349,13 @@ const EditorPage = () => {
     }
 
     return (
-        <div className="mainWrap">
+        <div className={chatOpen ? "mainWrap" : "mainWrap chat-closed"}>
 
             {/* Sidebar */}
-            <div className="aside">
+            <aside className="aside">
 
                 <div className="asideInner">
 
-                    {/* Logo */}
                     <div className="logo">
                         <img
                             className="logoImage"
@@ -299,8 +364,7 @@ const EditorPage = () => {
                         />
                     </div>
 
-                    {/* Connected Users */}
-                    <h3>
+                    <h3 className="asideTitle">
                         Connected ({clients.length})
                     </h3>
 
@@ -315,16 +379,16 @@ const EditorPage = () => {
 
                 </div>
 
-                {/* Copy Room ID */}
                 <button
                     className="btn copyBtn"
                     onClick={copyRoomID}
                     type="button"
+                    title="Copy Room ID"
                 >
-                    Copy Room ID 
+                    <CopyIcon size={16} />
+                    <span className="btnLabel">Copy Room ID</span>
                 </button>
 
-                {/* Logged-in user + Logout */}
                 <div className="userRow">
                     <button
                         className="btn userBtn"
@@ -342,52 +406,66 @@ const EditorPage = () => {
                         title="Leave room"
                         aria-label="Leave room"
                     >
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                            <polyline points="16 17 21 12 16 7" />
-                            <line x1="21" y1="12" x2="9" y2="12" />
-                        </svg>
+                        <LeaveIcon size={20} />
                     </button>
                 </div>
 
-            </div>
+            </aside>
 
-            {/* Editor Section */}
-            <div className="editorWrap">
+            {/* Workspace */}
+            <main className="editorWrap">
 
-                {/* Mode Switch */}
                 <div className="topBar">
+                    <div></div>
+
                     <ModeSwitch
                         mode={mode}
                         onChange={setMode}
                     />
+
+                    <div className="topBarRight">
+                        <button
+                            type="button"
+                            className={chatOpen ? "iconBtn iconBtn--active" : "iconBtn"}
+                            onClick={toggleChat}
+                            title={chatOpen ? "Hide chat" : "Show chat"}
+                            aria-label={chatOpen ? "Hide chat" : "Show chat"}
+                            aria-pressed={chatOpen}
+                        >
+                            <ChatIcon />
+                            {!chatOpen && unread > 0 && (
+                                <span className="badge">{badgeText(unread)}</span>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
-                {/* Editor and Compiler and exceliDraw */}
                 {socket && (
                     <>
                         <div className={mode === "whiteboard" ? "codeStage codeStage--hidden" : "codeStage"}>
-                            <Editor
-                                socket={socket}
-                                roomId={roomId}
-                                onCodeChange={handleCodeChange}
-                                language={language}
-                            />
-                            <Compiler
+                            <ResizableSplit
+                                direction={effectiveLayout === "side" ? "horizontal" : "vertical"}
                                 open={mode === "compiler"}
-                                socket={socket}
-                                language={language}
-                                onLanguageChange={setLanguage}
-                                getCode={getCode}
+                                first={
+                                    <Editor
+                                        socket={socket}
+                                        roomId={roomId}
+                                        onCodeChange={handleCodeChange}
+                                        language={language}
+                                    />
+                                }
+                                second={
+                                    <Compiler
+                                        open={mode === "compiler"}
+                                        socket={socket}
+                                        language={language}
+                                        onLanguageChange={setLanguage}
+                                        getCode={getCode}
+                                        layout={effectiveLayout}
+                                        onLayoutChange={changeLayout}
+                                        canToggleLayout={!narrow}
+                                    />
+                                }
                             />
                         </div>
 
@@ -404,20 +482,34 @@ const EditorPage = () => {
                     </>
                 )}
 
-            </div>
+            </main>
 
-            {/* Chat Section */}
-            <div className="chatWrap">
-
+            {/* Chat dock (stays mounted while hidden so messages & voice clips are kept) */}
+            <aside className="chatDock" inert={!chatOpen} aria-hidden={!chatOpen}>
                 <Chat
                     messages={messages}
                     mySocketId={socket?.id}
                     onSendText={sendText}
                     onSendVoice={sendVoice}
+                    onClose={() => setChatOpen(false)}
                 />
+            </aside>
 
-            </div>
+            {chatOpen && <div className="chatBackdrop" onClick={() => setChatOpen(false)} />}
 
+            {/* Floating chat button with unread badge */}
+            {!chatOpen && (
+                <button
+                    type="button"
+                    className="chatFab"
+                    onClick={() => setChatOpen(true)}
+                    title="Open chat"
+                    aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
+                >
+                    <ChatIcon size={22} />
+                    {unread > 0 && <span className="badge badge--fab">{badgeText(unread)}</span>}
+                </button>
+            )}
         </div>
     );
 };

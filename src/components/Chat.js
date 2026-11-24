@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { CloseIcon, MicIcon, SendIcon } from "./Icons";
 
 const MAX_RECORD_SECONDS = 60;
 
@@ -18,7 +19,7 @@ const VoiceMessage = ({ audio, mimeType }) => {
 const formatTime = (ts) =>
     new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-const Chat = ({ messages, mySocketId, onSendText, onSendVoice }) => {
+const Chat = ({ messages, mySocketId, onSendText, onSendVoice, onClose }) => {
     const [text, setText] = useState("");
     const [recording, setRecording] = useState(false);
     const [seconds, setSeconds] = useState(0);
@@ -120,8 +121,21 @@ const Chat = ({ messages, mySocketId, onSendText, onSendVoice }) => {
     };
 
     return (
-        <div className="chatWrap">
-            <h3 className="chatTitle">Room Chat</h3>
+        <div className="chatPanel">
+            <div className="chatHeader">
+                <h3 className="chatTitle">Room Chat</h3>
+                {onClose && (
+                    <button
+                        type="button"
+                        className="iconBtn"
+                        onClick={onClose}
+                        title="Hide chat"
+                        aria-label="Hide chat"
+                    >
+                        <CloseIcon />
+                    </button>
+                )}
+            </div>
 
             <div className="chatMessages">
                 {messages?.length === 0 && (
@@ -149,15 +163,15 @@ const Chat = ({ messages, mySocketId, onSendText, onSendVoice }) => {
             {recording ? (
                 <div className="chatRecording">
                     <span className="recDot" />
-                    <span>
+                    <span className="recTime">
                         Recording {String(Math.floor(seconds / 60)).padStart(2, "0")}:
                         {String(seconds % 60).padStart(2, "0")}
                     </span>
-                    <button className="chatIconBtn" onClick={cancelRecording} title="Cancel">
-                        ✕
+                    <button className="chatIconBtn" onClick={cancelRecording} title="Cancel" aria-label="Cancel recording">
+                        <CloseIcon size={16} />
                     </button>
-                    <button className="chatIconBtn send" onClick={stopRecording} title="Send voice message">
-                        ➤
+                    <button className="chatIconBtn send" onClick={stopRecording} title="Send voice message" aria-label="Send voice message">
+                        <SendIcon size={16} />
                     </button>
                 </div>
             ) : (
@@ -170,11 +184,11 @@ const Chat = ({ messages, mySocketId, onSendText, onSendVoice }) => {
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={handleKeyDown}
                     />
-                    <button className="chatIconBtn" onClick={startRecording} title="Record voice message">
-                        🎤︎︎
+                    <button className="chatIconBtn" onClick={startRecording} title="Record voice message" aria-label="Record voice message">
+                        <MicIcon size={16} />
                     </button>
-                    <button className="chatIconBtn send" onClick={sendText} title="Send">
-                        ➤
+                    <button className="chatIconBtn send" onClick={sendText} title="Send" aria-label="Send message">
+                        <SendIcon size={16} />
                     </button>
                 </div>
             )}
